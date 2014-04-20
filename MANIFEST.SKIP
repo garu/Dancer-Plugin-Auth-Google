@@ -1,0 +1,10 @@
+\.git
+\.swp
+\.swo
+\.bak
+\.prove
+\.tar\.gz
+blib
+MYMETA.*
+Makefile$
+MANIFEST\.SKIP
