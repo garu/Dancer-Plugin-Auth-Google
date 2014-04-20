@@ -1,7 +1,7 @@
 Dancer-Plugin-Auth-Google
 =========================
 
-This plugin provides a simplpe way to authenticate your users through Google's
+This plugin provides a simple way to authenticate your users through Google's
 OAuth API. It provides you with a helper to build easily a redirect to the
 authentication URI, defines automatically a callback route handler and saves
 the authenticated user to your session when done.
