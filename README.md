@@ -55,7 +55,7 @@ In the "Application type" section of the dialog, make sure you select
 "Web application". In the "Authorized JavaScript origins" field, make
 sure you put the domains of both your development server and your
 production one (e.g.: http://localhost:3000 and http://mywebsite.com).
-Same thing goes for the "Redirect URIs": those ****MUST**** be the same
+Same thing goes for the "Redirect URIs": those ** **MUST** ** be the same
 as you will set in your app and Google won't redirect to any page that
 is not listed (don't worry, you can edit this later too).
 
@@ -185,7 +185,7 @@ token:
 ```
 
 You can use that access token to make calls to a Google API on behalf of
-the user. See L<https://developers.google.com/accounts/docs/OAuth2WebServer>
+the user. See https://developers.google.com/accounts/docs/OAuth2WebServer
 for more information on this.
 
 
