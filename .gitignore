@@ -4,6 +4,7 @@ blib*
 Makefile
 MANIFEST
 Makefile.old
+MYMETA*
 Build
 Build.bat
 _build*
