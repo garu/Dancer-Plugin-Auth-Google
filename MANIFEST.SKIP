@@ -4,6 +4,7 @@
 \.bak
 \.prove
 \.tar\.gz
+^share
 blib
 MYMETA.*
 Makefile$
