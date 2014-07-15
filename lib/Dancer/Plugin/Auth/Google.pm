@@ -98,9 +98,18 @@ get '/auth/google/callback' => sub {
     my $user = from_json($res->decoded_content);
 
     # we need to stringify our JSON::Bool data as some
-    # session backends might have trouble storing objects
-    foreach my $k (keys %$user) {
-        $user->{$k} = "$user->{$k}" if Scalar::Util::blessed($user->{$k});
+    # session backends might have trouble storing objects.
+    # we should be able to safely remove this once
+    # https://github.com/PerlDancer/Dancer-Session-Cookie/pull/1
+    # (or a similar solution) is merged.
+    if (exists $user->{image} and exists $user->{image}{isDefault}) {
+        $user->{image}{isDefault} = "$user->{image}{isDefault}";
+    }
+    if (exists $user->{isPlusUser}) {
+        $user->{isPlusUser} = "$user->{isPlusUser}";
+    }
+    if (exists $user->{verified}) {
+        $user->{verified} = "$user->{verified}";
     }
 
     session 'google_user' => { %$data, %$user };
