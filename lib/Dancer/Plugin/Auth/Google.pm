@@ -62,6 +62,7 @@ register 'auth_google_authenticate_url' => sub {
         redirect_uri  => $callback_url,
         scope         => $scope,
         access_type   => $access_type,
+        @_
     );
 
     debug "google auth uri: $uri";
@@ -90,6 +91,9 @@ get '/auth/google/callback' => sub {
 
     my ($data, $error) = _parse_response( $res->decoded_content );
     return send_error($error) if $error;
+
+    return send_error( $data->{error} )
+        if $data->{error};
 
     return send_error 'google auth: no access token present'
         unless $data->{access_token};
@@ -293,6 +297,11 @@ read your configuration and create everything that it needs.
 This function returns an authorize URI for redirecting unauthenticated
 users. You should use this in a before filter like the "synopsis"
 demo above.
+
+Additional arguments can also be passed to the authentication url. For example,
+to force the approval prompt to be displayed, you can do
+
+        redirect auth_google_authenticate_url approval_prompt => 'force';
 
 =head1 ROUTE HANDLERS
 
