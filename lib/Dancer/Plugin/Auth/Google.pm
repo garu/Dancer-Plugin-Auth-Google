@@ -18,16 +18,22 @@ my $client_id;
 my $client_secret;
 my $scope;
 my $access_type;
-my $callback_url;
 my $callback_success;
 my $callback_fail;
 my $furl;
+
+sub callback_url {
+    # Return nothing (scalar undef) for missing config item
+    my $callback_url  = plugin_setting->{callback_url} // return;
+    # Prepend the current request URL base if the callback_url is relative
+    $callback_url = request->base.$callback_url if $callback_url =~ s/^\///;
+    return $callback_url;
+}
 
 register 'auth_google_init' => sub {
     my $config     = plugin_setting;
     $client_id     = $config->{client_id};
     $client_secret = $config->{client_secret};
-    $callback_url  = $config->{callback_url};
 
     $scope            = $config->{scope}            || 'profile';
     $callback_success = $config->{callback_success} || '/';
@@ -39,7 +45,7 @@ register 'auth_google_init' => sub {
             unless $config->{$param};
     }
 
-    debug "new google with $client_id, $client_secret, $callback_url";
+    debug "new google with $client_id, $client_secret, ".$config->{callback_url};
     $furl = Furl->new(
         agent    => "Dancer-Plugin-Auth-Google/$VERSION",
         timeout  => 5,
@@ -53,13 +59,13 @@ register 'auth_google_init' => sub {
 
 register 'auth_google_authenticate_url' => sub {
     Carp::croak 'auth_google_init() must be called first'
-        unless defined $callback_url;
+        unless defined callback_url;
 
     my $uri = URI->new('https://accounts.google.com/o/oauth2/auth');
     $uri->query_form(
         response_type => 'code',
         client_id     => $client_id,
-        redirect_uri  => $callback_url,
+        redirect_uri  => callback_url(),
         scope         => $scope,
         access_type   => $access_type,
     );
@@ -83,7 +89,7 @@ get '/auth/google/callback' => sub {
             code          => $code,
             client_id     => $client_id,
             client_secret => $client_secret,
-            redirect_uri  => $callback_url,
+            redirect_uri  => callback_url(),
             grant_type    => 'authorization_code',
         }
     );
@@ -263,6 +269,14 @@ And
         'Auth::Google':
             callback_url:   'http://myproductionserver.com/auth/google/callback'
 
+
+The C<callback_url> may be a relative path like I</auth/google/callback>. The
+domain part (base URL) of the current Dancer request will be used (prepended)
+to the given C<callback_url>.
+
+B<Caution>: All callback URLs being used must be configured in the Google API
+console! Using a relative path may pass invalid (unconfigured) callback URLs to
+the Google API which led to an error being shown to the user!
 
 =head3 Setting your permissions' scope
 

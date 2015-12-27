@@ -1,5 +1,8 @@
 Revision history for Dancer-Plugin-Auth-Google
 
+0.07    t.b.d.
+    - Callback url may now adopt to URL used for the current request
+
 0.06    2014-12-27
     - added missing prereq.
 
