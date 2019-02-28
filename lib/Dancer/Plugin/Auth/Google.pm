@@ -349,7 +349,7 @@ users. You should use this in a before filter like the "SYNOPSIS"
 demo above.
 
 Additional arguments can also be passed to the authentication url. For example,
-to force the approval prompt to be displayed, you can do
+to force the approval prompt to be displayed, you can do:
 
         redirect auth_google_authenticate_url approval_prompt => 'force';
 
