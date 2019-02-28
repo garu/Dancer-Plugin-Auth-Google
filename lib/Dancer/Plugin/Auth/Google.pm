@@ -21,6 +21,7 @@ my $access_type;
 my $callback_url;
 my $callback_success;
 my $callback_fail;
+my $legacy_gplus;
 my $furl;
 
 register 'auth_google_init' => sub {
@@ -33,6 +34,7 @@ register 'auth_google_init' => sub {
     $callback_success = $config->{callback_success} || '/';
     $callback_fail    = $config->{callback_fail}    || '/fail';
     $access_type      = $config->{access_type}      || 'online';
+    $legacy_gplus     = $config->{legacy_gplus}     || 0;
 
     foreach my $param ( qw(client_id client_secret callback_url) ) {
         Carp::croak "'$param' is expected but not found in configuration"
@@ -99,32 +101,52 @@ get '/auth/google/callback' => sub {
         unless $data->{access_token};
 
     $res = $furl->get(
-        'https://www.googleapis.com/plus/v1/people/me',
+        'https://www.googleapis.com/oauth2/v2/userinfo',
         [ 'Authorization' => 'Bearer ' . $data->{access_token} ],
     );
 
     my $user;
     ($user, $error)  = _parse_response( $res->decoded_content );
-    return send_error($error) if $error;
+    return send_error("google auth: $error") if $error;
 
-    # we need to stringify our JSON::Bool data as some
-    # session backends might have trouble storing objects.
-    # we should be able to safely remove this once
-    # https://github.com/PerlDancer/Dancer-Session-Cookie/pull/1
-    # (or a similar solution) is merged.
-    if (exists $user->{image} and exists $user->{image}{isDefault}) {
-        $user->{image}{isDefault} = "$user->{image}{isDefault}";
+    if (exists $user->{verified_email}) {
+        # we stringify our JSON::Bool data as some session
+        # backends might have trouble storing objects.
+        $user->{verified_email} = "$user->{verified_email}";
     }
-    if (exists $user->{isPlusUser}) {
-        $user->{isPlusUser} = "$user->{isPlusUser}";
-    }
-    if (exists $user->{verified}) {
-        $user->{verified} = "$user->{verified}";
-    }
+    $user = _convert_to_legacy_gplus_format($user) if $legacy_gplus;
 
     session 'google_user' => { %$data, %$user };
     redirect $callback_success;
 };
+
+sub _convert_to_legacy_gplus_format {
+    my ($user) = @_;
+
+    return {
+        kind        => "plus#person",
+        displayName => $user->{name},
+        name => {
+            givenName => $user->{given_name},
+            familyName => $user->{family_name},
+        },
+        language   => $user->{locale},
+        isPlusUser => ($user->{link} && index($user->{link},'http') == 0 ? 1 : 0),
+        url        => $user->{link},
+        gender     => $user->{gender},
+        image => {
+            url => $user->{picture},
+            isDefault => 0,
+        },
+        domain         => $user->{hd},
+        emails         => [ { type => "account", value => $user->{email} } ],
+        etag           => undef,
+        verified       => $user->{verified_email},
+        circledByCount => undef,
+        id             => $user->{id},
+        objectType     => "person",
+    };
+}
 
 sub _parse_response {
     my ($response) = @_;
@@ -244,6 +266,7 @@ Plugins / Auth::Google, like so:
             callback_url:     'http://localhost:3000/auth/google/callback'
             callback_success: '/'
             callback_fail:    '/fail'
+            legacy_gplus:     0
 
 Of those, only "client_id", "client_secret" and "callback_url" are mandatory.
 If you omit the other ones, they will assume their default values, as listed
