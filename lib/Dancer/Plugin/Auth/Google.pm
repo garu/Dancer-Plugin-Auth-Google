@@ -55,13 +55,13 @@ register 'auth_google_authenticate_url' => sub {
     Carp::croak 'auth_google_init() must be called first'
         unless defined $callback_url;
 
-    my $uri = URI->new('https://accounts.google.com/o/oauth2/auth');
+    my $uri = URI->new('https://accounts.google.com/o/oauth2/v2/auth');
     $uri->query_form(
-        response_type => 'code',
         client_id     => $client_id,
         redirect_uri  => $callback_url,
         scope         => $scope,
         access_type   => $access_type,
+        response_type => 'code',
     );
 
     debug "google auth uri: $uri";
@@ -77,7 +77,7 @@ get '/auth/google/callback' => sub {
     return redirect $callback_fail unless $code;
 
     my $res = $furl->post(
-        'https://accounts.google.com/o/oauth2/token',
+        'https://www.googleapis.com/oauth2/v4/token',
         [ 'Content-Type' => 'application/x-www-form-urlencoded' ],
         {
             code          => $code,
