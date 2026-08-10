@@ -46,7 +46,7 @@ register 'auth_google_init' => sub {
         agent    => "Dancer-Plugin-Auth-Google/$VERSION",
         timeout  => 5,
         ssl_opts => {
-            SSL_verify_mode => SSL_VERIFY_NONE(),
+            SSL_verify_mode => SSL_VERIFY_PEER(),
         },
     );
 
