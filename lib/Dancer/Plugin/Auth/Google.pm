@@ -36,6 +36,7 @@ register 'auth_google_init' => sub {
     $client_id     = $config->{client_id};
     $client_secret = $config->{client_secret};
 
+    my $insecure      = $config->{insecure}         || 'no';
     $scope            = $config->{scope}            || 'profile';
     $callback_success = $config->{callback_success} || '/';
     $callback_fail    = $config->{callback_fail}    || '/fail';
@@ -52,7 +53,7 @@ register 'auth_google_init' => sub {
         agent    => "Dancer-Plugin-Auth-Google/$VERSION",
         timeout  => 5,
         ssl_opts => {
-            SSL_verify_mode => SSL_VERIFY_PEER(),
+            SSL_verify_mode => ($insecure eq 'yes' ? SSL_VERIFY_NONE() : SSL_VERIFY_PEER()),
         },
     );
 
@@ -229,16 +230,18 @@ for new ones.
 =head2 Google Application
 
 Anyone with a valid Google account can register an application. Go to
-L<http://console.developers.google.com>, then select a project or create
-a new one. After that, in the sidebar on the left, select "Credentials".
+L<https://console.cloud.google.com/apis/dashboard>, then select a project or create
+a new one.
 
-First, go to the I<OAuth consent screen> tab and set it up with you website's
+After that, in the sidebar on the left, select "OAuth Consent Screen".
+
+Inside, go to the I<Branding> tab and set it up with you website's
 logo, desired credentials (the "email" and "profile" ones are granted
 by default) and, specially, your B<authorized domains>. We'll need those for
 the next step!
 
-Now go to the I<Credentials> tab and click the B<Create credentials>
-button/dropdown and select B<OAuth client ID>.
+Now go to the I<Clients> tab and click the B<< + Create client >>
+button/dropdown to create an B<OAuth client ID>.
 
 =for HTML
 <p><img src="https://raw.githubusercontent.com/garu/Dancer-Plugin-Auth-Google/master/share/create-new-id.png"></p>
@@ -248,21 +251,17 @@ select I<"Web application">.
 
 Under the "Authorized JavaScript origins" field, put the domains of both
 your development server and your production one
-(e.g.: http://localhost:3000 and http://mywebsite.com). You will only be
+(e.g.: http://localhost:3000 and https://mywebsite.com). You will only be
 able to include domains listed under your I<authorized domain list>,
 which you set on the previous step (though localhost domains are ok).
 
-Same thing goes for the "Redirect URIs": those B<**MUST**> be the same
+Same thing goes for the "Authorized Redirect URIs": those B<**MUST**> be the same
 as you will set in your app and Google won't redirect to any page that
 is not listed (don't worry, you can edit this later too).
 
-=for HTML
-<p><img src="https://raw.githubusercontent.com/garu/Dancer-Plugin-Auth-Google/master/share/authorized-uris.png"></p>
-
 Again, make sure the "Redirect URIs" contains both your development
 url (e.g. C<http://localhost:3000/auth/google/callback>) and production
-(e.g. C<http://mywebsite.com/auth/google/callback>). It's usually a good
-practice to add I<both> HTTP and HTTPS callback urls.
+(e.g. C<https://mywebsite.com/auth/google/callback>).
 
 After you're finished, copy the "Client ID" and "Client Secret" data
 of your newly created app. It should be listed on that same panel
@@ -286,6 +285,7 @@ Plugins / Auth::Google, like so:
             callback_success: '/'
             callback_fail:    '/fail'
             legacy_gplus:     0
+	    insecure:         'no'
 
 Of those, only "client_id", "client_secret" and "callback_url" are mandatory.
 If you omit the other ones, they will assume their default values, as listed
@@ -309,6 +309,11 @@ And
         'Auth::Google':
             callback_url:   'http://myproductionserver.com/auth/google/callback'
 
+B<NOTE>: version 0.08 onwards will verify the certificates before connecting
+to Google OAuth servers, protecting against MitM attacks (CWE-295). If you
+want to explicitly allow for insecure connections (the default behavior for
+versions 0.07 and below), you can set 'insecure' to 'true'. Any other value
+for 'insecure' will verify the certificates.
 
 The C<callback_url> may be a relative path like I</auth/google/callback>. The
 domain part (base URL) of the current Dancer request will be used (prepended)
@@ -451,7 +456,7 @@ Dancer::Plugin::Auth::Twitter and Dancer::Plugin::Auth::Facebook.
 
 =head1 COPYRIGHT AND LICENCE
 
-Copyright (C) 2014-2019, Breno G. de Oliveira
+Copyright (C) 2014-2026, Breno G. de Oliveira
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
