@@ -24,10 +24,10 @@ my $legacy_gplus;
 my $furl;
 
 sub callback_url {
-    # Return nothing (scalar undef) for missing config item
-    my $callback_url  = plugin_setting->{callback_url} // return;
+    my $callback_url  = plugin_setting->{callback_url};
+    return if !defined $callback_url;
     # Prepend the current request URL base if the callback_url is relative
-    $callback_url = request->base.$callback_url if $callback_url =~ s/^\///;
+    $callback_url = request->base . $callback_url if $callback_url =~ s/^\///;
     return $callback_url;
 }
 
@@ -304,12 +304,6 @@ And
         'Auth::Google':
             callback_url:   'http://myproductionserver.com/auth/google/callback'
 
-B<NOTE>: version 0.08 onwards will verify the certificates before connecting
-to Google OAuth servers, protecting against MitM attacks (CWE-295). If you
-want to explicitly allow for insecure connections (the default behavior for
-versions 0.07 and below), you can set 'insecure' to 'true'. Any other value
-for 'insecure' will verify the certificates.
-
 The C<callback_url> may be a relative path like I</auth/google/callback>. The
 domain part (base URL) of the current Dancer request will be used (prepended)
 to the given C<callback_url>.
@@ -317,6 +311,13 @@ to the given C<callback_url>.
 B<Caution>: All callback URLs being used must be configured in the Google API
 console! Using a relative path may pass invalid (unconfigured) callback URLs to
 the Google API which led to an error being shown to the user!
+
+B<NOTE>: version 0.08 onwards will verify the certificates before connecting
+to Google OAuth servers, protecting against MitM attacks (CWE-295). If you
+want to explicitly allow for insecure connections (the default behavior for
+versions 0.07 and below), you can set 'insecure' to 'true'. Any other value
+for 'insecure' will verify the certificates.
+
 
 =head3 Setting your permissions' scope
 
@@ -354,7 +355,7 @@ To do so, simply add an extra param to the auth_google_authenticate_url:
 
 For example, to force the approval prompt to be displayed, you can do:
 
-    redirect auth_google_authenticate_url approval_prompt => 'force';
+    redirect auth_google_authenticate_url( approval_prompt => 'force' );
 
 =head1 ROUTE HANDLERS
 
@@ -395,7 +396,8 @@ and picture. C<< session('google_user') >> looks like so (random hash order!):
         verified_email => 1,
     }
 
-=head4 NOTE: G+ is no more. Add 'legacy_gplus: 1' to keep old code running.
+=head4 NOTE: Once upon a time there was a thing called "G+".
+Add C<< legacy_gplus => 1 >> to keep old code that used it running.
 
 Up to version 0.06 of this module the C<< session('google_user') >>
 data structure was as returned by Google Plus' API. Google decided to
