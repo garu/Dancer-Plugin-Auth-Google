@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 use Test::More import => ['!pass'];
-plan tests => 6;
+plan tests => 8;
 
 {
     use Dancer;
@@ -33,6 +33,11 @@ plan tests => 6;
         response_type => 'code',
     );
     ok $u->eq($expected), "$u looks like $expected";
+
+    ok my $u2 = auth_google_authenticate_url( extra => 'moar data', and => 42 ), 'augmented authenticate url';
+    isa_ok $u2, 'URI';
+    $expected->query_form( $expected->query_form(), extra => 'moar data', and => 42 );
+    ok $u2->eq($expected), "$u2 looks like $expected";
 }
 
 use Dancer::Test;
