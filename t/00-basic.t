@@ -5,8 +5,8 @@ plan tests => 6;
 
 {
     use Dancer;
+    use Dancer::Plugin::Auth::Google;
 
-    # settings must be loaded before we load the plugin
     setting( plugins => {
         'Auth::Google' => {
             client_id        => 1234,
@@ -18,10 +18,6 @@ plan tests => 6;
             scope            => 'profile email whatever',
         },
     });
-
-    eval 'use Dancer::Plugin::Auth::Google';
-    die $@ if $@;
-    ok 1, 'plugin loaded successfully';
 
     ok auth_google_init(), 'able to load auth_google_init()';
 

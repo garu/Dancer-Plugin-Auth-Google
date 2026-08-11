@@ -65,6 +65,7 @@ register 'auth_google_authenticate_url' => sub {
         scope         => $scope,
         access_type   => $access_type,
         response_type => 'code',
+        @_
     );
 
     debug "google auth uri: $uri";
@@ -92,19 +93,13 @@ get '/auth/google/callback' => sub {
     );
 
     my ($data, $error) = _parse_response( $res->decoded_content );
-    if (ref $data && !$error) {
-        # Google tells us to ignore any unrecognized fields
-        # included in the response (like their "id_token").
-        $data = {
-            access_token  => $data->{access_token},
-            expires_in    => $data->{expires_in},
-            token_type    => $data->{token_type},
-            refresh_token => $data->{refresh_token},
-        };
-    }
-    else {
-        return send_error('google auth: ' . (defined $error ? $error : 'unknown error'));
-    }
+    return send_error($error) if $error;
+
+    return send_error( $data->{error} )
+        if $data->{error};
+
+    return send_error 'google auth: no access token present'
+        unless $data->{access_token};
 
     $res = $furl->get(
         'https://www.googleapis.com/oauth2/v2/userinfo',
@@ -341,27 +336,11 @@ demo above.
 
 Google allows you to send additional C<key=value> data to preserve state
 in your application throughout the OAuth2 process, via the I<state> variable.
-To do so, simply tweak the URI object with that additional info:
+To do so, simply add an extra param to the auth_google_authenticate_url:
 
-    use URI::Escape;
+For example, to force the approval prompt to be displayed, you can do:
 
-    if (!session('google_user')) {
-        my $state = 'CSRF=my-special-token&other=whatever';
-
-        my $uri = auth_google_authenticate_url;
-        $uri->query_form(
-            $uri->query_form, # <-- required so we ADD instead of REPLACE
-            state => URI::Encode->new->encode($state),
-        );
-
-        return redirect $uri;
-    }
-
-If you do this, the "state" data will be sent back to you on the callback
-as a request parameter. You can then use it to direct your user to the
-proper resource or check it against forgery attacks - assuming you also
-stored it in a session variable of some sort.
-
+    redirect auth_google_authenticate_url approval_prompt => 'force';
 
 =head1 ROUTE HANDLERS
 
